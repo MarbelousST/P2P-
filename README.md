@@ -1,11 +1,11 @@
 # Proyecto final de sistemas distribuidos
 
 ```sh
-#Descargar proyecto
+##Descargar proyecto
 
 En linea de comandos localizarte en la carpeta donde deseas descargar el proyecto y ejecutar:
 
-$ git clone https://github.com/MarbelousST/P2P-.git
+# git clone https://github.com/MarbelousST/P2P-.git
 
 ```
 
