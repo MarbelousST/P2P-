@@ -16,12 +16,6 @@ int recArch_CtrlPeer (){
 }
 
 
-/*Guarda el archivo recivido en el repositorio local*/
-int guarArch_Ctrl (){
-	return 0;
-}
-
-
 /*Crea cliente
 	-Función principal del cliente
 */
