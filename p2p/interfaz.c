@@ -41,8 +41,6 @@ void interfaz(){
 
 	int opc = 0;
 
-
-
 	do{ 	
 	 	printf("Interfaz de usuario ...\n\n\n");
 		printf("Selecciona una opción de la sigueinte lista:\n");

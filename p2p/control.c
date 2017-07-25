@@ -45,10 +45,12 @@
 #include <arpa/inet.h>
 
 
+extern int errno;			  /*Variable global donde se capura un posible error*/
+Conexion envio[100];              /*Sockets a los que se les ha enviado petición de conexión*/
 int *nenvios, port = 50000;   /*número de envios de peticiones, puerto por el que se conecta el proceso servidor*/
 
 
-/*Verifica si existe conexión entre una máquina remota y el peer*/
+/*Verifica si existe conexión entre una máquina remota y el peer local*/
 int exist_conex(char maquina[]){
 	int i;
 
@@ -57,27 +59,6 @@ int exist_conex(char maquina[]){
 	 		return 1;
 	}
 	return 0;
-}
-
-int conecta(char ip[]) {
-	int c, i = 1, id;
-	struct sockaddr_in cliente;
-
-	id = socket(PF_INET,SOCK_STREAM,0);                            // creamos un socket 
-	if (id == -1){
-        printf("Could not create socket");
-    }
-
-	setsockopt(id,SOL_SOCKET,0,&i,sizeof(i));
-	cliente.sin_family = AF_INET;                                  // familia porque nuestro socket va a ser utilizado sobre una red
-	cliente.sin_port = htons(port);                                // puerto de salida
-	printf("puerto utilizado : %d\n", port);
-	cliente.sin_addr.s_addr = inet_addr(ip);                       //ip del server
-	memset(&(cliente.sin_zero), 0, 8); 
-
-	c = connect(id,(struct sockaddr *)&cliente,sizeof(struct sockaddr));
-	printf("c ::: %d\n", c);
-	return (c == 0) ? id : -1;
 }
 
 /*Realiza una conexión "todos contra todos"
@@ -97,32 +78,62 @@ int conectarRed (){
 
 	FILE *lnodos = NULL;			/*Archivo donde se guardan los nodos de la red*/
 	char ip_nodo[40];		/*Ip del nodo a conectar*/
-	int nn = 0, conn = 0;
+	int nn = 0, conn = 0, j, k;
+	char *machine_name[100];
+	int nmachines = 0;
 
+	//Abrimos el archivo de nodos guardados
 	lnodos = fopen("lista_nodos.in", "r");
 	if (lnodos==NULL) {
 		fputs ("File error",stderr); exit (1);
 	}
 
+
+	//lee caca uno de los nodos del archivo y hace una conexión entre el peer y el nodo
 	while ( feof( lnodos ) == 0 ){
 		fgets( ip_nodo, 40, lnodos );
 		printf("Conectando a la Red ...\n");
-		if ( !exist_conex( ip_nodo ) && (conn = conecta(ip_nodo)) != -1){
+		if ( !exist_conex( ip_nodo ) && (conn = cliente(ip_nodo)) != -1){
 
+			// Cada vez que se realiza una conexión exitosa se guarda en la lista de envios 
 			nn = (*nenvios);
+
+			//Son las conexiones abiertas con otros nodos
 			(*nenvios)++;
 			printf("%d!!!![[ se conecto ! ]]\n", port);
-			envio[ nn ].sock = conn;            
+			envio[ nn ].sock = conn;            	
      		strcpy(envio[nn].nom, ip_nodo);
      		printf("por el socket %d\n", envio [ nn ].sock);
+
+     		// 
 		}
 		else{
 			printf("No se pudo conectar a %s :: %d\n",ip_nodo, port);
 		}
 	}
-
-	printf("Termina la funcion conectarRed\n");
 	fclose ( lnodos );
+
+	/*Una vez realizada todas las conexiones hace una petición a cada uno de los nodos
+	  para que regresen sus listas de nodos
+	*/
+	for(j = 0; j<(*nenvios); j++){
+       nmachines = solNodos_PeerCtrl(envio[ j ].sock, machine_name);
+
+       /*Por cada lista que regresan los nodos se hace una conexión 
+       con los que aun no hay una conexión*/
+       for (int k = 0; k < nmachines; k++){
+
+    		if(!exist_conex(machine_name[k]) && 
+    		(conn = cliente(machine_name[k])) != -1){
+    			envio[(*nenvios)].sock = conn;       
+        		strcpy(envio[(*nenvios)].nom, machine_name[k]);     
+        		(*nenvios)++;
+    		}
+       }
+    }  
+    actNodos_Peer();
+	printf("Termina la funcion conectarRed\n");
+	
 	return 0;
 }
 
@@ -131,6 +142,7 @@ int conectarRed (){
 	-Realiza el comando "ls" en la carpeta de archivos compartidos
 */
 int resArch_Peer (){
+
 	return 0;
 }
 
@@ -138,21 +150,30 @@ int resArch_Peer (){
 /*Actualiza el archivo lista_nodos con los nodos recividos de la red
 	-Se ejecuta una vez hecha la conexión con los demas nodos
 */
-int actNodos_Peer (){
-	return 0;
+void actNodos_Peer (){
+	FILE *lnodos = NULL;
+	int i;
+	lnodos = fopen("lista_nodos.in", "w+");
+	if (lnodos==NULL) {
+		fputs ("File error",stderr); exit (1);
+	}
+
+	for (int i = 0; i < (*nenvios); i++){
+		fputs(envio[i].nom, lnodos);
+	}
+
+	fclose ( lnodos );
+	return;
 }
 
 
-/*Envia la lista de nodos al peer que lo solicite*/
-int envNodos_Peer (){
-	return 0;
-}
 
 
 /*Solicitud de la interfaz de la lista de archivos que existe en la red.
   	-Hace una petición a cada uno de los nodos de la red 
   	 para que realicen el comando "ls" en la carpeta de 
   	 archivos compartidos*/
+	//Consultar los archivos de cada nodo para mostrarlas al cliente
 int solArch_Inter (){
 	printf("Solicitando lista de archivos a los servidores...\n\n");
 	printf("*Número de conexiones : %d\n", (*nenvios));
@@ -185,28 +206,12 @@ int terminar_Inter(){
 
 int main (){
 
-	int idmem2, idmem;
-  	idmem =  shmget(IPC_PRIVATE, sizeof(Conexion)*1000, 0777);
-  	idmem2 =  shmget(IPC_PRIVATE, sizeof(int)*1, 0777);
-  
-  	if ( idmem == -1 ){
-  		printf("No se pudo crear Memoria Compartida. \n");
-  	}
+printf("asdgasd\n");
+	(nenvios) = 0;
 
-  	else{
-  		envio = (Conexion *)shmat(idmem, (char *)0, 0);    
-  		nenvios = (int *)shmat(idmem2, (char *)0, 0); 
-
-  		if (shmdt( (char *)envio ) < 0 ){
-  			printf(" Error : shmdt. \n");
-  		}
-
-  		//conectarRed();
-  		aceptConex_Ctrl ();
-  		interfaz();
-	  	shmctl(idmem, IPC_RMID, (struct shmid_ds *)NULL );
-	  	shmctl(idmem2, IPC_RMID, (struct shmid_ds *)NULL );
-  	}
+	//conectarRed();
+	//aceptConex_Ctrl ();
+	interfaz();
 
 
 	return 0;
