@@ -29,7 +29,7 @@ void selecArch_Ctrl (){
 void salir_Ctrl (){
 	system("clear");
 	printf("Saliendo de la aplicación\n");
-	terminar_Inter();
+	terminar_Inter();	
 	return;
 }
 

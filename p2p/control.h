@@ -7,6 +7,8 @@
 typedef struct { int sock; char nom[MAXLINE]; } Conexion; /*Estructura donde se guara el identificador del socket y nombre asigando*/
 extern int errno;			  /*Variable global donde se capura un posible error*/
 
+Conexion *envio;              /*Sockets a los que se les ha enviado petición de conexión*/
+int *nenvios;
 
 int exist_conex(char maquina[]);
 

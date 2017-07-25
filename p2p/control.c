@@ -33,8 +33,8 @@
 #include <string.h>
 #include "interfaz.h"
 #include "control.h"
-//#include "cliente.h"
-//#include "servidor.h"
+#include "cliente.h"
+#include "servidor.h"
 
 //Memoria compartida
 #include <sys/shm.h>
@@ -44,7 +44,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-Conexion *envio;              /*Sockets a los que se les ha enviado petición de conexión*/
+
 int *nenvios, port = 50000;   /*número de envios de peticiones, puerto por el que se conecta el proceso servidor*/
 
 
@@ -154,7 +154,9 @@ int envNodos_Peer (){
   	 para que realicen el comando "ls" en la carpeta de 
   	 archivos compartidos*/
 int solArch_Inter (){
-	printf("Muestra archivos, función de control\n");
+	printf("Solicitando lista de archivos a los servidores...\n\n");
+	printf("*Número de conexiones : %d\n", (*nenvios));
+
 	return 0;
 }
 
@@ -166,19 +168,13 @@ int solArch_InterCli (){
 	return 0;
 }
 
-/*Solicitud de búsqueda desde el módulo servidor
-	-Busca el archivo en los archivos compartidos que solicita otro peer desde el módulo servidor
-*/
-int busArch_Serv (){
-	return 0;
-}
-
-
 /*Guarda el archivo solicitado por el módulo cliente en los archivos compartidos
 */
 int GuardArch_Cli (){
 	return 0;
 }
+
+
 /*Cierra todas las conexiones*/
 int terminar_Inter(){
 	printf("Termiando procesos, función de control\n");
@@ -206,6 +202,7 @@ int main (){
   		}
 
   		//conectarRed();
+  		aceptConex_Ctrl ();
   		interfaz();
 	  	shmctl(idmem, IPC_RMID, (struct shmid_ds *)NULL );
 	  	shmctl(idmem2, IPC_RMID, (struct shmid_ds *)NULL );
