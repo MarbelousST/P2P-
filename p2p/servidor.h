@@ -3,6 +3,7 @@
  #define SERVIDOR_H
  
 int envNodos_Peer(int sock);
-int aceptConex_Ctrl();
+int listArch_Ctrl ();
+int *aceptConex_Ctrl();
  
  #endif /* SERVIDOR_H */

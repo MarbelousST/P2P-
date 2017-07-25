@@ -17,10 +17,24 @@
 extern int port, *nenvios;
 extern Conexion envio[10];
 
-/*Manda una petición de busqueda al módulo "Control"
-	-Recibe la solicitud del cliente de otro peer
+/*Manda la lista de archivos locales al cliente que la solicitó
 */
-int busArch_Ctrl (){
+int listArch_Ctrl (int sock){
+	FILE * larchivos = NULL;
+	char nArchivo[40];
+	larchivos = fopen("lista_nodos.in", "r");
+	if (larchivos==NULL) {
+		fputs ("File error",stderr); exit (1);
+	}
+
+	while ( feof( larchivos ) == 0 ){
+		fgets( nArchivo, 40, larchivos );
+		send(sock, nArchivo, MAXLINE, 0);
+	}
+
+	//Para terminar de recibir la lista de archivos
+	send(sock, "end_of_files", MAXLINE, 0);
+
 	return 0;
 }
 
@@ -49,7 +63,7 @@ int envNodos_Peer(int sock){
 
 /*Crea servidor con los hilos para atender a los clientes
 	-funciíon principal del servidor*/
-int aceptConex_Ctrl (){
+int *aceptConex_Ctrl (){
 
 	int descriptor_socket, i = 1, desc_arch, pid ;
 	struct sockaddr_in 	struct_servidor;
@@ -88,13 +102,13 @@ int aceptConex_Ctrl (){
 	      
 	       */  
              
-        	//conecta_cliente(nombre);        
+        	conecta_cliente(nombre);        
          	//espera las peticiones de los clientes
 	        while(1){  
 	        	recv(desc_arch, peticion, MAXLINE, 0);
 	         	printf(":: %s\n", peticion);
 	        	if(strcmp(peticion, "consulta") == 0){
-	        		printf("Haciendo consulta de archivos... \n");
+	        		printf("Enviando lista de archivos... \n");
 	           		//server_side_make_ls(desc_arch);
 	        	}
 	           
@@ -103,9 +117,9 @@ int aceptConex_Ctrl (){
 	           		envNodos_Peer(desc_arch);
 	           		//server_side_send_machine_names(desc_arch);     
 	          	}                	 
-	          	else if(strcmp(peticion, "seleccionar")==0){
-	          		printf("Enviando archivos\n");
-	          		envArch_Peer();
+	          	else if(strcmp(peticion, "seleccionar") == 0){
+	          		printf("Enviando lista de archivos archivos\n");
+	          		listArch_Ctrl(desc_arch);
 	          	}
 	          	else if(strcmp(peticion, "quit") == 0){
 	            	shutdown(desc_arch, 2);

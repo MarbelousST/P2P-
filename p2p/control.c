@@ -44,6 +44,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+//fork
+#include  <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <pthread.h>
 
 extern int errno;			  /*Variable global donde se capura un posible error*/
 Conexion envio[100];              /*Sockets a los que se les ha enviado petición de conexión*/
@@ -59,6 +64,26 @@ int exist_conex(char maquina[]){
 	 		return 1;
 	}
 	return 0;
+}
+
+void conecta_cliente(char ip[] ){
+int pid = fork();
+
+ if(pid == 0){
+  printf("(servidor al cliente) Intentando conectarse a %s:%d\n", ip, port);
+  envio[(*nenvios)].sock = cliente(ip);
+  strcpy(envio[(*nenvios)].nom, ip);
+  
+ if(!exist_conex(envio[(*nenvios)].nom) && envio[(*nenvios)].sock != -1 ){
+  (*nenvios)++;         
+  printf("Se hizo la bi-direccional :: %d \n", (*nenvios));
+  printf("socket <<:: %d\n", envio[ (*nenvios) - 1].sock);
+ }
+ else 
+  printf("El nombre ya estaba en la lista o = %d \n", envio[(*nenvios)].sock);
+  
+  exit(0);
+ }
 }
 
 /*Realiza una conexión "todos contra todos"
@@ -178,6 +203,8 @@ int solArch_Inter (){
 	printf("Solicitando lista de archivos a los servidores...\n\n");
 	printf("*Número de conexiones : %d\n", (*nenvios));
 
+	solLista_CtrlPeer ();
+
 	return 0;
 }
 
@@ -186,12 +213,6 @@ int solArch_Inter (){
 */
 int solArch_InterCli (){
 	printf("Solicita archivo, función de control\n");
-	return 0;
-}
-
-/*Guarda el archivo solicitado por el módulo cliente en los archivos compartidos
-*/
-int GuardArch_Cli (){
 	return 0;
 }
 
@@ -206,13 +227,12 @@ int terminar_Inter(){
 
 int main (){
 
-printf("asdgasd\n");
+	pthread_t hilo1;
 	(nenvios) = 0;
 
-	//conectarRed();
-	//aceptConex_Ctrl ();
+	pthread_create(&hilo1, NULL, (void*)aceptConex_Ctrl, NULL);
 	interfaz();
-
+	conectarRed();
 
 	return 0;
 }

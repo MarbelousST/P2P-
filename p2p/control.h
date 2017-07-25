@@ -8,6 +8,8 @@ typedef struct { int sock; char nom[MAXLINE]; } Conexion; /*Estructura donde se 
 
 int exist_conex(char maquina[]);
 
+void conecta_cliente(char ip[] );
+
 int conectarRed ();
 
 int solArch_Inter ();

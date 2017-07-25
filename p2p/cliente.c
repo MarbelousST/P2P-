@@ -12,7 +12,10 @@
 extern int port, *nenvios;
 extern Conexion envio[10];
 
-/*Recibe la solicitud de "control" y la envía al peer*/
+/*Recibe la solicitud de "control" y la envía al peer
+  Consulta lista de archivos de cada uno de los nodos
+
+*/
 int solLista_CtrlPeer (){
 	int i, nlines;
 	char output[1000][100];
@@ -26,20 +29,20 @@ int solLista_CtrlPeer (){
 		while(1){
 			recv(envio[i].sock, &output[nlines], MAXLINE, 0);
 
-			if(strcmp(output[nlines],"end_of_ls") == 0)
+			if(strcmp(output[nlines],"end_of_files") == 0)
 			break;
 
 			nlines++;
 		}
 
-		//impr_ls(envio[i].nom, output, nlines);
+
 	}
 	return 0;
 }
 
 /*Solicita la lista de nodos a los que está conectado el otro peer*/
 int solNodos_PeerCtrl(int sock, char *machine_names[100]){
-	send(sock, "machine_names", MAXLINE, 0);
+	send(sock, "lista_nodos", MAXLINE, 0);
     int nmachines = 0;
       
 	while(1){
